@@ -2,5 +2,6 @@ base
 dplyr
 ggplot2
 knitr
+maps
 reshape2
 rgbif
