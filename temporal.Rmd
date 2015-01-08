@@ -1,0 +1,65 @@
+---
+title: "Temporal Records"
+author: "Ben Weinstein"
+date: "Thursday, January 08, 2015"
+output:
+  html_document:
+    theme: spacelab
+---
+
+#Aim
+
+One of the fundamental questions associated with climate change is how plants will respond to rising temperatures. To accurately model plant phenology, we need to consider both the error associated 
+
+#Approach
+
+
+```{r}
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+```
+
+#What's wrong with linear regression
+
+##simulate data
+
+Consider a simple time series model where phenology is advancing due to rising temperatures. The advancment is modeled as a poisson process where lambda is the julian date from the previous year.
+
+$$Y_i \sim y_{i-1} - N(\mu=1,sd=50)$$
+
+
+```{r, echo=FALSE}
+years<-seq(1901,2000)
+
+#trajectory
+d<-function(){
+days<-c()
+days[1]<-180
+for (x in 2:length(years-1)){
+  days[x]<- days[x-1] - rnorm(n=1,mean=1,sd=50)
+}
+out<-data.frame(days,years)
+return(out)
+}
+
+dat<-rbind_all(replicate(1000,d(),simplify=F))
+
+q<-group_by(dat,years) %>% summarize(mean=mean(days))
+
+p<-ggplot(q,aes(years,mean)) + geom_point() + theme_bw() + ylab("First Flowering Date")
+p
+```
+
+#Fit a linear line
+
+If we assume that the first flowering date is normally distributed, then we can model the data as:
+
+$$Y_i \sim N(\mu,\sigma)$$
+$$\mu = \alpha + \beta * year$$
+
+```{r}
+m<-lm(data=q,mean~years)
+summary(m)
+p+ geom_line(aes(y=predict(m,newdata=q)),col="Red")
+```

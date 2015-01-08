@@ -1,0 +1,66 @@
+---
+title: "Historical Records for Hummingbirds and Plants"
+author: "Ben Weinstein"
+date: "Thursday, January 08, 2015"
+output:
+  html_document:
+    theme: spacelab
+---
+
+
+```{r,echo=FALSE}
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(rgbif)
+library(knitr)
+
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=13,echo=FALSE,cache=TRUE,cache.path = 'gbif_cache/', fig.path='figure/')
+```
+
+#Aim
+
+
+
+#Approach
+
+#Plant Records
+
+Search for all penstemon records
+
+### Search for occurrence IDs in GBIF
+```{r}
+out <- name_backbone(name='Penstemon',rank="genus")
+head(out)
+```
+
+##Get all records with this genus key
+```{r,eval=T}
+dataout <- occ_search(scientificName = "Penstemon*", coordinatestatus = TRUE, removeZeros = TRUE, limit = 100000)
+
+#How many results did we find
+print(paste("There were",dataout$meta$count, "records"))
+
+dat<-dataout$data
+write.csv(dat,"Data/Penstemon.csv")
+```
+
+```{r}
+#optionally read in data 
+dat<-read.csv("Data/Penstemon.csv")
+```
+
+#Records over time
+
+```{r}
+s<-group_by(dat,month,year) %>% summarize(n=n())
+s$Time<-strptime(paste(s$month,1,s$year,sep="/"),format="%m/%d/%Y")
+
+ggplot(data=s,aes(x=Time,y=n)) + geom_line() + geom_point() + theme_bw() + ggtitle("GBIF Penstemon Records")
+```
+
+##Where do these records come from?
+
+```{r}
+gbifmap(input=dat)
+```
