@@ -1,0 +1,42 @@
+---
+title: "PNW_Herbarium"
+author: "Ben Weinstein"
+date: "Sunday, March 15, 2015"
+output: html_document
+---
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(rgbif)
+library(knitr)
+library(data.table)
+library(chron)
+
+
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=13,echo=FALSE,cache=TRUE,cache.path = 'herb_cache/', fig.path='herb/')
+```
+
+#Read in a portion of the dataset
+```{r}
+occ<-fread(input = "C:/Users/Ben/Dropbox/Grants/NSF PostDoc/Herbarium Data/CPNWH_Native/occurrences.txt",nrows=100000,header=FALSE,verbose=F)
+
+#heading is awkward, just read it in pure
+setnames(occ,colnames(read.delim("C:/Users/Ben/Dropbox/Grants/NSF PostDoc/Herbarium Data/CPNWH_Native/occurrences.txt",nrows=10))[-1])
+
+colname
+#Time Stamp
+occ$Time<-as.POSIXct(occ$V3)
+occ$Year<-years(occ$Time)
+#Looks like V13 is family
+#Looks V17 is genus
+
+ann<-fread(input = "C:/Users/Ben/Dropbox/Grants/NSF PostDoc/Herbarium Data/CPNWH_Native/annotations.txt",nrows=1000,head)
+```
+
+#Sampling over time
+
+```{r}
+samp<-as.data.frame(table(occ$V13,occ$Year))
+melt()

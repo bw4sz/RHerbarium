@@ -14,29 +14,30 @@ library(reshape2)
 library(ggplot2)
 library(rgbif)
 library(knitr)
-
+library(spline)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=13,echo=FALSE,cache=TRUE,cache.path = 'gbif_cache/', fig.path='figuregbif/')
 ```
 
 #Aim
 
 
-
 #Approach
 
 #Plant Records
 
-Search for all penstemon records
+Search for dominant hummigbird pollinated plants
+
 
 ### Search for occurrence IDs in GBIF
 ```{r}
-out <- name_backbone(name='Penstemon',rank="genus")
+tosearch<-c("Castilleja","Delphinium","Penstemon","Aquilegia","Mimulus","Gilia")
+out <- name_backbone(name=tosearch,rank="genus")
 head(out)
 ```
 
 ##Get all records with this genus key
 ```{r,eval=F}
-dataout <- occ_search(scientificName = "Penstemon*", coordinatestatus = TRUE, removeZeros = TRUE, limit = 110000,continent="north_america")
+dataout <- occ_search(scientificName = "Penstemon*|Castilleja*", coordinatestatus = TRUE, removeZeros = TRUE, limit = 110000,continent="north_america")
 
 #get rid of unknown records
 #How many results did we find
@@ -65,7 +66,7 @@ missing<-dat[is.na(dat$year),]
 s<-group_by(dat,year) %>% summarize(n=n())
 s$Time<-strptime(paste(s$month,1,s$year,sep="/"),format="%m/%d/%Y")
 
-ggplot(data=s,aes(x=year,y=n))  + geom_point() + theme_bw() + ggtitle("GBIF Penstemon Records") + ylim(0,1000) + geom_smooth()
+ggplot(data=dat,aes(x=year))  + geom_histogram() + theme_bw() + labs(x="Year",y="Records") + geom_vline(1955)
 ```
 
 ##Where do these records come from?
