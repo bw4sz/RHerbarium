@@ -12,9 +12,10 @@ output:
 library(dplyr)
 library(reshape2)
 library(ggplot2)
-library(rgbif)
+library(spocc)
 library(knitr)
 library(spline)
+library(chron)
 opts_chunk$set(message=FALSE,warning=FALSE,fig.width=13,echo=FALSE,cache=TRUE,cache.path = 'gbif_cache/', fig.path='figuregbif/')
 ```
 
@@ -30,28 +31,28 @@ Search for dominant hummigbird pollinated plants
 
 ### Search for occurrence IDs in GBIF
 ```{r}
-tosearch<-c("Castilleja","Delphinium","Penstemon","Aquilegia","Mimulus","Gilia")
-out <- name_backbone(name=tosearch,rank="genus")
-head(out)
+out <- occ(query="Penstemon",limit=10000,from=c("gbif","inat","bison"))
+df<-occ2df(out)
+
+df$year<-years(df$date)
+ydat<-df %>% group_by(name,year) %>% summarize(n=n()) %>% filter(!is.na(year)) + scale_x_chron() 
+
+ggplot(ydat,aes(x=as.numeric(as.character(year)),y=n,col=name)) + geom_point() + geom_smooth(aes(group=name),method="glm",family="quasipoisson", formula = y ~ ns(x, 3)) + ggtitle("Records over time") + xlab("Year")
+
+df$month<-months(df$date)
+mdat<-df %>% group_by(name,month) %>% summarize(n=n()) %>% filter(!is.na(month))
+mdat$month<-factor(mdat$month,levels=month.name)
+
+
+ggplot(mdat,aes(x=month,y=n)) + geom_point() + geom_smooth(aes(group=1))
 ```
 
 ##Get all records with this genus key
 ```{r,eval=F}
-dataout <- occ_search(scientificName = "Penstemon*|Castilleja*", coordinatestatus = TRUE, removeZeros = TRUE, limit = 110000,continent="north_america")
 
-#get rid of unknown records
-#How many results did we find
-print(paste("There were",dataout$meta$count, "records"))
-
-dat<-dataout$data
-
-basisOfRecord=c("FOSSIL_SPECIMEN","HUMAN_OBSERVATION","LITERATURE","LIVING_SPECIMEN","MACHINE_OBSERVATION","OBSERVATION","PRESERVED_SPECIMEN")
-                
-dat<-dat[dat$basisOfRecord %in% basisOfRecord,]
-                
-write.csv(dat,"Data/Penstemon.csv")
 ```
 
+#Penstemon GBIF example
 ```{r}
 #optionally read in data 
 dat<-read.csv("Data/Penstemon.csv")
@@ -66,7 +67,7 @@ missing<-dat[is.na(dat$year),]
 s<-group_by(dat,year) %>% summarize(n=n())
 s$Time<-strptime(paste(s$month,1,s$year,sep="/"),format="%m/%d/%Y")
 
-ggplot(data=dat,aes(x=year))  + geom_histogram() + theme_bw() + labs(x="Year",y="Records") + geom_vline(1955)
+ggplot(data=dat,aes(x=year))  + geom_histogram() + theme_bw() + labs(x="Year",y="Records") + geom_vline(xintercept=1955)
 ```
 
 ##Where do these records come from?
@@ -81,11 +82,12 @@ gbifmap(input=datplot,mapdatabase="usa")
 #Flowering Duration for each species, across time
 Assuming that the vast majority of plants are colleced in flower
 ```{r,fig.height=30}
+p
 #just get the most common species for the moment, atleast 50 records
-keep<-names(which(table(dat$species)>100))
-dplot<-dat %>% filter(species %in% keep) %>% mutate(minm=mean(month,na.rm=T)) %>% arrange(minm) %>% mutate(Month.abb=factor(month.abb[month],levels=month.abb))
+keep<-names(which(table(dat$species)>500))
+dplot<-dat %>% filter(species %in% keep) %>% mutate(minm=mean(month,na.rm=T)) %>% arrange(minm) %>% mutate(Month.abb=factor(month.abb[month],levels=month.abb)) %>% select(species,month,Month.abb) %>% filter(!is.na(month))
 
 p<-ggplot(dplot,aes(x=species,y=month)) + geom_violin(fill="black") + theme_bw() + coord_flip() + scale_y_discrete(labels=month.abb)
-p
+
 ```
 

@@ -3,6 +3,7 @@ library(ggplot2) # For plotting
 library(dplyr)  # for data manipulation
 library(taxize) # for comparing names
 library(stringr) # for text searches
+library(spocc)
 
 ##read in data
 mydata<-read.csv("Data/my.csv",row.names=1)
